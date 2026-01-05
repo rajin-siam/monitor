@@ -17,7 +17,7 @@ public class MeterService {
 
 
     private final RedisTemplate<String, Object> redisTemplate;
-    private final String METER_KEY_PREFIX = "meter:";
+    private final String METER_KEY_PREFIX = "electric_meter";
 
     public MeterService(RedisTemplate<String, Object> redisTemplate) {
         this.redisTemplate = redisTemplate;
@@ -36,26 +36,31 @@ public class MeterService {
             meter.setDailyStats(new DailyStats());
         }
 
-        String key = METER_KEY_PREFIX + meter.getMeterId();
+        String field = "meter:" + meter.getMeterId();
 
-        redisTemplate.opsForValue().set(key, meter);
+        redisTemplate.opsForHash().put(METER_KEY_PREFIX, field, meter);
 
         return  meter;
     }
 
     public EnergyMeter getMeter(String meterId) {
-        String key = METER_KEY_PREFIX + meterId;
-        Object value = redisTemplate.opsForValue().get(key);
+        String key = METER_KEY_PREFIX ;
+        String field = "meter:" + meterId;
+        Object value = redisTemplate.opsForHash().get(key, field);
         return coverToMeter(value);
     }
 
     public List<EnergyMeter> getAllMeters() {
-        Set<String> keys = redisTemplate.keys(METER_KEY_PREFIX + "*");
-        List<Object> values = redisTemplate.opsForValue().multiGet(keys);
-        return values.stream()
-                .map(this::coverToMeter)
-                .filter(Objects::nonNull)
-                .toList();
+        String key = METER_KEY_PREFIX ;
+        Map<Object, Object> entries = redisTemplate.opsForHash().entries(key);
+        List<EnergyMeter> meters = new ArrayList<>();
+        for(Object obj : entries.values()) {
+            EnergyMeter meter = coverToMeter(obj);
+            if(meter != null) {
+                meters.add(meter);
+            }
+        }
+        return meters;
 
     }
 
@@ -74,9 +79,9 @@ public class MeterService {
             meter.getDailyStats().updateWithReading(reading);
         }
         checkAndAddAlerts(meter, reading);
-
-        String key = METER_KEY_PREFIX + meterId;
-        redisTemplate.opsForValue().set(key, meter);
+        String key = METER_KEY_PREFIX ;
+        String field = "meter:" + meterId;
+        redisTemplate.opsForHash().put(key, field, meter);
         return meter;
 
     }
@@ -118,8 +123,10 @@ public class MeterService {
     }
 
     public boolean deleteMeter(String meterId) {
-        String key = METER_KEY_PREFIX + meterId;
-        return redisTemplate.delete(key);
+        String key = METER_KEY_PREFIX ;
+        String field = "meter:" + meterId;
+        Long result = redisTemplate.opsForHash().delete(key, field);
+        return result != null && result > 0;
     }
 
     public List<EnergyMeter> getMetersByType(String meterType) {
