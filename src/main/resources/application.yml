@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: energy-monitor
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 60000
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.energy: DEBUG
