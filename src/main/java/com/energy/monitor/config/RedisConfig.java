@@ -1,6 +1,8 @@
 package com.energy.monitor.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
@@ -22,13 +24,16 @@ public class RedisConfig {
 
     @Bean
     public RedisTemplate<String, Object> redisTemplate() {
+        ObjectMapper redisMapper = new ObjectMapper();
+        redisMapper.registerModule(new JavaTimeModule());
+        redisMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(jedisConnectionFactory());
         template.setKeySerializer(RedisSerializer.string());
-        template.setValueSerializer(new GenericJackson2JsonRedisSerializer(new ObjectMapper()));
+        template.setValueSerializer(new GenericJackson2JsonRedisSerializer(redisMapper));
         template.setHashKeySerializer(RedisSerializer.string());
-        template.setHashValueSerializer(new GenericJackson2JsonRedisSerializer(new ObjectMapper()));
+        template.setHashValueSerializer(new GenericJackson2JsonRedisSerializer(redisMapper));
         template.afterPropertiesSet();
         return template;
     }

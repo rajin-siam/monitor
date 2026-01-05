@@ -4,10 +4,11 @@ import com.energy.monitor.model.Alert;
 import com.energy.monitor.model.CurrentReading;
 import com.energy.monitor.model.DailyStats;
 import com.energy.monitor.model.EnergyMeter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -133,12 +134,16 @@ public class MeterService {
             if(obj instanceof EnergyMeter) {
                 return (EnergyMeter) obj;
             }
-
+            if(obj instanceof LinkedHashMap) {
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.registerModule(new JavaTimeModule());
+                return mapper.convertValue(obj, EnergyMeter.class);
+            }
         } catch (Exception ex) {
             System.err.println("Error converting to EnergyMeter: " + ex.getMessage());
             return null;
         }
-        return (EnergyMeter) obj;
+        return null;
     }
 
 }

@@ -17,12 +17,4 @@ public class EnergyMeter {
     private CurrentReading currentReading;
     private DailyStats dailyStats;
     private List<Alert> alerts;
-
-    public EnergyMeter(String meterId, String meterType, Location location) {
-        this.meterId = meterId;
-        this.meterType = meterType;
-        this.location = location;
-        this.alerts = new ArrayList<>();
-        this.dailyStats = new DailyStats();
-    }
 }
